@@ -17,24 +17,19 @@ jobs:
         id: pick
         run: |
           FILE=$(find ./markdown -type f -name '*.md' | shuf -n 1)
-          echo "📄 Picked file: $FILE"
           echo "::set-output name=file::$FILE"
         shell: bash
 
-      - name: Read markdown content and extract filename
+      - name: Read markdown content and extract filename (no .md)
         id: read
         run: |
           FILE_PATH="${{ steps.pick.outputs.file }}"
-          echo "📄 Reading: $FILE_PATH"
-
-          # 마크다운 내용 전체
           CONTENT=$(cat "$FILE_PATH")
           echo "CONTENT<<EOF" >> $GITHUB_ENV
           echo "$CONTENT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-          # 파일명 추출해서 메일 제목으로 사용
-          TITLE=$(basename "$FILE_PATH")
+          TITLE=$(basename "$FILE_PATH" .md)
           echo "TITLE=$TITLE" >> $GITHUB_ENV
         shell: bash
 
@@ -60,5 +55,4 @@ jobs:
           html_body: |
             <div style="font-family: Arial, sans-serif; background-color: #ffffff; padding: 20px;">
               <p>📎 <a href="${{ env.URL }}">GitHub에서 보기</a></p>
-              <hr style="margin: 20px 0;" />
             </div>
