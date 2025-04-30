@@ -1,0 +1,42 @@
+name: Send Markdown via Gmail
+
+on:
+  schedule:
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+
+jobs:
+  send_email:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Pick random markdown file
+        id: pick
+        run: |
+          FILE=$(find ./markdown -name '*.md' | shuf -n 1)
+          echo "file=$FILE" >> $GITHUB_OUTPUT
+
+      - name: Read markdown content
+        id: read
+        run: |
+          echo "Reading ${{ steps.pick.outputs.file }}"
+          CONTENT=$(cat "${{ steps.pick.outputs.file }}")
+          # 안전하게 환경 변수에 저장 (노출 없음)
+          echo "CONTENT<<EOF" >> $GITHUB_ENV
+          echo "$CONTENT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Send email using Gmail SMTP
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "📘 Let-me-study"
+          to: ${{ secrets.MAIL_TO }}
+          from: GitHub Action <${{ secrets.MAIL_USERNAME }}>
+          body: ${{ env.CONTENT }}
