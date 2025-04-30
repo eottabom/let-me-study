@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Pick random markdown file
@@ -19,22 +19,24 @@ jobs:
           FILE=$(find ./markdown -name '*.md' | shuf -n 1)
           echo "file=$FILE" >> $GITHUB_OUTPUT
 
-      - name: Read markdown content and title
+      - name: Read markdown content and extract title
         id: read
         run: |
           FILE_PATH="${{ steps.pick.outputs.file }}"
-          
-          # 1. 내용 전체
+
+          echo "Reading file: $FILE_PATH"
+
+          # 전체 내용 읽어서 CONTENT 환경변수로 등록
           CONTENT=$(cat "$FILE_PATH")
           echo "CONTENT<<EOF" >> $GITHUB_ENV
           echo "$CONTENT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-          
-          # 2. 제목만 추출 (첫 번째 '# ' 줄)
+
+          # 제목 추출 (첫 번째 '# ' 줄)
           TITLE=$(grep -m 1 '^# ' "$FILE_PATH" | sed 's/^# //')
           echo "TITLE=$TITLE" >> $GITHUB_ENV
 
-      - name: Generate GitHub file URL
+      - name: Generate GitHub link
         id: link
         run: |
           FILE_PATH="${{ steps.pick.outputs.file }}"
