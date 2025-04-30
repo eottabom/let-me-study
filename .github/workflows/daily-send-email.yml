@@ -19,24 +19,16 @@ jobs:
           FILE=$(find ./markdown -name '*.md' | shuf -n 1)
           echo "file=$FILE" >> $GITHUB_OUTPUT
 
-      - name: Read markdown content and extract title
+      - name: Read markdown content
         id: read
         run: |
           FILE_PATH="${{ steps.pick.outputs.file }}"
-
-          echo "Reading file: $FILE_PATH"
-
-          # 전체 내용 읽어서 CONTENT 환경변수로 등록
           CONTENT=$(cat "$FILE_PATH")
           echo "CONTENT<<EOF" >> $GITHUB_ENV
           echo "$CONTENT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-          # 제목 추출 (첫 번째 '# ' 줄)
-          TITLE=$(grep -m 1 '^# ' "$FILE_PATH" | sed 's/^# //')
-          echo "TITLE=$TITLE" >> $GITHUB_ENV
-
-      - name: Generate GitHub link
+      - name: Generate GitHub file URL
         id: link
         run: |
           FILE_PATH="${{ steps.pick.outputs.file }}"
@@ -51,10 +43,10 @@ jobs:
           server_port: 587
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
-          subject: "📘 Let-me-study: ${{ env.TITLE }}"
+          subject: "📘 Let-me-study: Daily Digest"
           to: ${{ secrets.MAIL_TO }}
           from: GitHub Action <${{ secrets.MAIL_USERNAME }}>
           body: |
             📎 View on GitHub: ${{ env.URL }}
 
-            ${{ env.CONTENT }}
+            <pre style="white-space: pre-wrap;">${{ env.CONTENT }}</pre>
