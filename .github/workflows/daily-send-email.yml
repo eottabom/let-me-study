@@ -19,25 +19,24 @@ jobs:
           FILE=$(find ./markdown -name '*.md' | shuf -n 1)
           echo "file=$FILE" >> $GITHUB_OUTPUT
 
-      - name: Extract title and generate link
+      - name: Extract title and GitHub link
         id: meta
         run: |
           FILE_PATH="${{ steps.pick.outputs.file }}"
           FILE_PATH_CLEAN=${FILE_PATH#./}
-          
           TITLE=$(grep -m 1 '^# ' "$FILE_PATH" | sed 's/^# //')
-
           GITHUB_LINK="https://github.com/eottabom/let-me-study/blob/main/$FILE_PATH_CLEAN"
 
           echo "TITLE=$TITLE" >> $GITHUB_ENV
           echo "URL=$GITHUB_LINK" >> $GITHUB_ENV
 
-      - name: Read markdown content
-        id: read
+      - name: Convert Markdown to HTML
         run: |
-          CONTENT=$(cat "${{ steps.pick.outputs.file }}")
-          echo "CONTENT<<EOF" >> $GITHUB_ENV
-          echo "$CONTENT" >> $GITHUB_ENV
+          sudo apt-get update && sudo apt-get install -y pandoc
+          pandoc "${{ steps.pick.outputs.file }}" -f markdown -t html -o content.html
+
+          echo "HTML_CONTENT<<EOF" >> $GITHUB_ENV
+          cat content.html >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Send email using Gmail SMTP
@@ -50,7 +49,9 @@ jobs:
           subject: "📘 Let-me-study: ${{ env.TITLE }}"
           to: ${{ secrets.MAIL_TO }}
           from: GitHub Action <${{ secrets.MAIL_USERNAME }}>
-          body: |
-            ${{ env.CONTENT }}
-
-            📎 View on GitHub: ${{ env.URL }}
+          html_body: |
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+              <p><a href="${{ env.URL }}">📎 View on GitHub</a></p>
+              <hr />
+              ${{ env.HTML_CONTENT }}
+            </div>
