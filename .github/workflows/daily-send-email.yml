@@ -2,7 +2,7 @@ name: 📘 Let-me-study
 
 on:
   schedule:
-    - cron: '0 23 * * *'
+    - cron: '0 23 * * *'  # 매일 오전 8시 (KST)
   workflow_dispatch:
 
 jobs:
@@ -19,34 +19,30 @@ jobs:
           FILE=$(find ./markdown -name '*.md' | shuf -n 1)
           echo "file=$FILE" >> $GITHUB_OUTPUT
 
-      - name: Read markdown content
-        id: read
-        run: |
-          echo "Reading ${{ steps.pick.outputs.file }}"
-          CONTENT=$(cat "${{ steps.pick.outputs.file }}")
-          echo "CONTENT<<EOF" >> $GITHUB_ENV
-          echo "$CONTENT" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Generate GitHub file URL
-        id: link
+      - name: Extract question and generate link
+        id: meta
         run: |
           FILE_PATH="${{ steps.pick.outputs.file }}"
-          FILE_PATH_CLEAN=${FILE_PATH#./}  # remove './'
-          URL="https://github.com/${{ github.repository }}/blob/main/$FILE_PATH_CLEAN"
-          echo "URL=$URL" >> $GITHUB_ENV
+          FILE_PATH_CLEAN=${FILE_PATH#./}
+          QUESTION=$(grep -m 1 '^# ' "$FILE_PATH" | sed 's/^# //')
+          GITHUB_LINK="https://github.com/${{ github.repository }}/blob/main/$FILE_PATH_CLEAN"
 
-      - name: Send email using Gmail SMTP
+          echo "QUESTION=$QUESTION" >> $GITHUB_ENV
+          echo "URL=$GITHUB_LINK" >> $GITHUB_ENV
+
+      - name: Send HTML email
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
           server_port: 587
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
-          subject: "📘 Let-me-study: Daily Digest"
+          subject: "📘 Let-me-study"
           to: ${{ secrets.MAIL_TO }}
           from: GitHub Action <${{ secrets.MAIL_USERNAME }}>
-          body: |
-            ${{ env.CONTENT }}
-
-            📎 View on GitHub: ${{ env.URL }}
+          html_body: |
+            <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f6f8fa;">
+              <h3 style="color: #2e7d32;">오늘의 질문</h3>
+              <h2 style="color: #000;">${{ env.QUESTION }}</h2>
+              <a href="${{ env.URL }}" style="display:inline-block; padding:10px 20px; background:#2e7d32; color:#fff; text-decoration:none; border-radius:5px;">답변 확인</a>
+            </div>
