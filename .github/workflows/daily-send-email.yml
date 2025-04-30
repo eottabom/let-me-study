@@ -1,4 +1,4 @@
-name: Send Markdown via Gmail
+name: 📘 Let-me-study
 
 on:
   schedule:
@@ -24,10 +24,17 @@ jobs:
         run: |
           echo "Reading ${{ steps.pick.outputs.file }}"
           CONTENT=$(cat "${{ steps.pick.outputs.file }}")
-          # 안전하게 환경 변수에 저장 (노출 없음)
           echo "CONTENT<<EOF" >> $GITHUB_ENV
           echo "$CONTENT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+
+      - name: Generate GitHub file URL
+        id: link
+        run: |
+          FILE_PATH="${{ steps.pick.outputs.file }}"
+          FILE_PATH_CLEAN=${FILE_PATH#./}  # remove './'
+          URL="https://github.com/${{ github.repository }}/blob/main/$FILE_PATH_CLEAN"
+          echo "URL=$URL" >> $GITHUB_ENV
 
       - name: Send email using Gmail SMTP
         uses: dawidd6/action-send-mail@v3
@@ -36,7 +43,10 @@ jobs:
           server_port: 587
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
-          subject: "📘 Let-me-study"
+          subject: "📘 Let-me-study: Daily Digest"
           to: ${{ secrets.MAIL_TO }}
           from: GitHub Action <${{ secrets.MAIL_USERNAME }}>
-          body: ${{ env.CONTENT }}
+          body: |
+            ${{ env.CONTENT }}
+
+            📎 View on GitHub: ${{ env.URL }}
