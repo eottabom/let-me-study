@@ -61,7 +61,4 @@ jobs:
             <div style="font-family: Arial, sans-serif; background-color: #ffffff; padding: 20px;">
               <p>📎 <a href="${{ env.URL }}">GitHub에서 보기</a></p>
               <hr style="margin: 20px 0;" />
-              <pre style="font-family:monospace; font-size:14px; line-height:1.5; background:#f6f8fa; padding:16px; border-radius:8px; white-space:pre-wrap;">
-${{ env.CONTENT }}
-              </pre>
             </div>
