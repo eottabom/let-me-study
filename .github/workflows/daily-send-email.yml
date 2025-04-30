@@ -2,7 +2,7 @@ name: 📘 Let-me-study
 
 on:
   schedule:
-    - cron: '0 23 * * *'  # 매일 오전 8시 (KST)
+    - cron: '0 23 * * *'  # 매일 오전 8시 (KST 기준, UTC+9)
   workflow_dispatch:
 
 jobs:
@@ -10,39 +10,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Pick random markdown file
+      - name: Pick random markdown file from /markdown
         id: pick
         run: |
           FILE=$(find ./markdown -name '*.md' | shuf -n 1)
           echo "file=$FILE" >> $GITHUB_OUTPUT
 
-      - name: Extract question and generate link
+      - name: Extract question and generate GitHub link
         id: meta
         run: |
           FILE_PATH="${{ steps.pick.outputs.file }}"
           FILE_PATH_CLEAN=${FILE_PATH#./}
-          QUESTION=$(grep -m 1 '^# ' "$FILE_PATH" | sed 's/^# //')
-          GITHUB_LINK="https://github.com/${{ github.repository }}/blob/main/$FILE_PATH_CLEAN"
+          
+          # 제목(질문) 추출 - 첫 번째 '# ' 헤더
+          TITLE=$(grep -m 1 '^# ' "$FILE_PATH" | sed 's/^# //')
+
+          # GitHub 링크 생성 (브랜치 자동 인식)
+          GITHUB_LINK="https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/$FILE_PATH_CLEAN"
 
           echo "QUESTION=$QUESTION" >> $GITHUB_ENV
           echo "URL=$GITHUB_LINK" >> $GITHUB_ENV
 
-      - name: Send HTML email
+      - name: Send email using Gmail SMTP (HTML format)
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
           server_port: 587
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
-          subject: "📘 Let-me-study"
+          subject: "Let-me-study: ${{ env.TITLE }}"
           to: ${{ secrets.MAIL_TO }}
           from: GitHub Action <${{ secrets.MAIL_USERNAME }}>
           html_body: |
             <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f6f8fa;">
-              <h3 style="color: #2e7d32;">오늘의 질문</h3>
-              <h2 style="color: #000;">${{ env.QUESTION }}</h2>
-              <a href="${{ env.URL }}" style="display:inline-block; padding:10px 20px; background:#2e7d32; color:#fff; text-decoration:none; border-radius:5px;">답변 확인</a>
+              <h2 style="color: #000;">${{ env.TITLE }}</h2>
+              <p style="margin: 20px 0;">
+                <a href="${{ env.URL }}" style="display:inline-block; padding:10px 20px; background:#2e7d32; color:#fff; text-decoration:none; border-radius:5px;">확인</a>
+              </p>
+              <p style="font-size: 14px; color: #555;">
+                또는 GitHub에서 보기:<br>
+                <a href="${{ env.URL }}">${{ env.URL }}</a>
+              </p>
             </div>
