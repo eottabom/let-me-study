@@ -13,33 +13,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Pick markdown, extract title, convert to HTML
-        id: process
+      - name: Pick markdown + extract title + generate link
+        id: meta
         run: |
-          # 1. 무작위 .md 파일 선택
           FILE=$(find ./markdown -name '*.md' | shuf -n 1)
           FILE_CLEAN=${FILE#./}
 
-          # 2. 제목 추출 (첫 줄의 '# 제목')
           TITLE=$(grep -m 1 '^# ' "$FILE" | sed 's/^# //')
-
-          # 3. GitHub 링크 생성
           GITHUB_LINK="https://github.com/eottabom/let-me-study/blob/main/$FILE_CLEAN"
 
-          # 4. 환경 변수로 전달
           echo "TITLE=$TITLE" >> $GITHUB_ENV
           echo "URL=$GITHUB_LINK" >> $GITHUB_ENV
 
-          # 5. Pandoc 설치 및 HTML 변환
-          sudo apt-get update && sudo apt-get install -y pandoc
-          pandoc "$FILE" -f markdown -t html -o content.html
-
-          # 6. HTML 내용 환경변수로 저장
-          echo "HTML_CONTENT<<EOF" >> $GITHUB_ENV
-          cat content.html >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Send email using Gmail SMTP
+      - name: Send email (link only)
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
@@ -51,8 +37,6 @@ jobs:
           from: GitHub Action <${{ secrets.MAIL_USERNAME }}>
           html_body: |
             <div style="font-family: Arial, sans-serif; padding: 20px;">
-              <h2>${{ env.TITLE }}</h2>
-              <p><a href="${{ env.URL }}">📎 GitHub에서 원본 보기</a></p>
-              <hr />
-              ${{ env.HTML_CONTENT }}
+              <h2 style="color: #000;">${{ env.TITLE }}</h2>
+              <p>📎 <a href="${{ env.URL }}">GitHub에서 전체 보기</a></p>
             </div>
