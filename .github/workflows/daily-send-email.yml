@@ -10,22 +10,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Pick markdown + extract title + generate link
-        id: meta
+      - name: Pick random markdown file
+        id: pick
         run: |
           FILE=$(find ./markdown -name '*.md' | shuf -n 1)
-          FILE_CLEAN=${FILE#./}
+          echo "file=$FILE" >> $GITHUB_OUTPUT
 
-          TITLE=$(grep -m 1 '^# ' "$FILE" | sed 's/^# //')
-          GITHUB_LINK="https://github.com/eottabom/let-me-study/blob/main/$FILE_CLEAN"
-
+      - name: Read markdown content and title
+        id: read
+        run: |
+          FILE_PATH="${{ steps.pick.outputs.file }}"
+          
+          # 1. 내용 전체
+          CONTENT=$(cat "$FILE_PATH")
+          echo "CONTENT<<EOF" >> $GITHUB_ENV
+          echo "$CONTENT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          # 2. 제목만 추출 (첫 번째 '# ' 줄)
+          TITLE=$(grep -m 1 '^# ' "$FILE_PATH" | sed 's/^# //')
           echo "TITLE=$TITLE" >> $GITHUB_ENV
-          echo "URL=$GITHUB_LINK" >> $GITHUB_ENV
 
-      - name: Send email (link only)
+      - name: Generate GitHub file URL
+        id: link
+        run: |
+          FILE_PATH="${{ steps.pick.outputs.file }}"
+          FILE_PATH_CLEAN=${FILE_PATH#./}
+          URL="https://github.com/${{ github.repository }}/blob/main/$FILE_PATH_CLEAN"
+          echo "URL=$URL" >> $GITHUB_ENV
+
+      - name: Send email using Gmail SMTP
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
@@ -35,8 +52,7 @@ jobs:
           subject: "📘 Let-me-study: ${{ env.TITLE }}"
           to: ${{ secrets.MAIL_TO }}
           from: GitHub Action <${{ secrets.MAIL_USERNAME }}>
-          html_body: |
-            <div style="font-family: Arial, sans-serif; padding: 20px;">
-              <h2 style="color: #000;">${{ env.TITLE }}</h2>
-              <p>📎 <a href="${{ env.URL }}">GitHub에서 전체 보기</a></p>
-            </div>
+          body: |
+            📎 View on GitHub: ${{ env.URL }}
+
+            ${{ env.CONTENT }}
