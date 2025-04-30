@@ -19,7 +19,7 @@ jobs:
           FILE=$(find ./markdown -name '*.md' | shuf -n 1)
           echo "file=$FILE" >> $GITHUB_OUTPUT
 
-      - name: Extract question and generate GitHub link
+      - name: Extract title and generate GitHub link
         id: meta
         run: |
           FILE_PATH="${{ steps.pick.outputs.file }}"
@@ -29,9 +29,9 @@ jobs:
           TITLE=$(grep -m 1 '^# ' "$FILE_PATH" | sed 's/^# //')
 
           # GitHub 링크 생성 (브랜치 자동 인식)
-          GITHUB_LINK="https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/$FILE_PATH_CLEAN"
+          GITHUB_LINK="https://github.com/eottabom/let-me-study/blob/main/$FILE_PATH_CLEAN"
 
-          echo "QUESTION=$QUESTION" >> $GITHUB_ENV
+          echo "TITLE=$TITLE" >> $GITHUB_ENV
           echo "URL=$GITHUB_LINK" >> $GITHUB_ENV
 
       - name: Send email using Gmail SMTP (HTML format)
@@ -50,8 +50,5 @@ jobs:
               <p style="margin: 20px 0;">
                 <a href="${{ env.URL }}" style="display:inline-block; padding:10px 20px; background:#2e7d32; color:#fff; text-decoration:none; border-radius:5px;">확인</a>
               </p>
-              <p style="font-size: 14px; color: #555;">
-                또는 GitHub에서 보기:<br>
-                <a href="${{ env.URL }}">${{ env.URL }}</a>
-              </p>
+              📎 View on GitHub: ${{ env.URL }}
             </div>
