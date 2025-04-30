@@ -52,7 +52,6 @@ jobs:
           subject: "✏️ Let-me-study: ${{ env.TITLE }}"
           to: ${{ secrets.MAIL_TO }}
           from: GitHub Action <${{ secrets.MAIL_USERNAME }}>
-          html_body: |
-            <div style="font-family: Arial, sans-serif; background-color: #ffffff; padding: 20px;">
-              <p>📎 <a href="${{ env.URL }}">GitHub에서 보기</a></p>
-            </div>
+          body: |
+            📎 GitHub에서 보기: ${{ env.URL }}
+            ${{ env.CONTENT }}
