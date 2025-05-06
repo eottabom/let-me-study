@@ -2,35 +2,29 @@ name: ✏️ Let-me-study
 
 on:
   schedule:
-    - cron: '0 23 * * *'  # 매일 오전 8시 (KST)
+    - cron: '0 23 * * *'
   workflow_dispatch:
 
 jobs:
   send_email:
     runs-on: ubuntu-latest
+    container:
+      image: pandoc/core:3.1  # pandoc 공식 이미지 (이미 pandoc 설치되어 있음)
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install pandoc
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pandoc
-        shell: bash
-
       - name: Pick random markdown file
         id: pick
         run: |
           FILE=$(find ./markdown -type f -name '*.md' | shuf -n 1)
-          echo "::set-output name=file::$FILE"
-        shell: bash
+          echo "file=$FILE" >> $GITHUB_OUTPUT
 
       - name: Convert to HTML
         id: convert
         run: |
           FILE_PATH="${{ steps.pick.outputs.file }}"
-
           TITLE=$(basename "$FILE_PATH" .md)
           echo "TITLE=$TITLE" >> $GITHUB_ENV
 
@@ -43,7 +37,6 @@ jobs:
           echo "HTML_CONTENT<<EOF" >> $GITHUB_ENV
           cat content.html >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-        shell: bash
 
       - name: Send email with rendered markdown
         uses: dawidd6/action-send-mail@v3
