@@ -1,6 +1,5 @@
 # TCP 연결 및 종료 과정(3-way / 4-way handshake)
 
----
 
 ## TCP 3-way Handshake (연결 설정)
 
